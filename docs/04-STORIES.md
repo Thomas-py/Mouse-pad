@@ -37,6 +37,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-04 Descubrimiento mDNS (servidor)
 - **Alcance**: F‑20, F‑25 (CLI mínima con `--name`, `--port`, `--udp-port`).
 - **Hecho cuando**: `dns-sd -B _remotepad._tcp` (si hay macOS a mano) o, en Windows, un cliente `zeroconf` de prueba (`server/scripts/browse.py`) muestra el servicio con los TXT correctos; al Ctrl+C desaparece.
+- **Estado**: hecho (tests, `DiscoveryAnnouncer` con Zeroconf real inyectable). La verificación manual con `browse.py` contra un `remotepad-server` corriendo no se ejecutó en esta sesión.
 
 ### S-05 CI de build iOS + firma + Sideloadly
 - **Objetivo**: dejar un pipeline que compile la app en un runner `macos-latest` de GitHub Actions y produzca un `.ipa` instalable con Sideloadly desde la netbook Windows, sin depender de una Mac física.
