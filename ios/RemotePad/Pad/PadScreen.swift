@@ -374,19 +374,29 @@ final class PadSession: ObservableObject {
 /// del pad sin querer al arrastrar hacia la izquierda. SwiftUI no expone
 /// el `UINavigationController` directo, así que se agarra vía un
 /// `UIViewControllerRepresentable` invisible.
+///
+/// El disable tiene que pasar en `viewDidAppear`, no antes: si se llama
+/// apenas se crea el controller (p.ej. en `updateUIViewController`), iOS
+/// vuelve a activar el gesto solo una vez termina la animación del push —
+/// probado en dispositivo real, la primera versión (disable inmediato)
+/// no alcanzaba.
 private struct SwipeBackDisabler: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> UIViewController {
-        UIViewController()
+    func makeUIViewController(context: Context) -> Controller {
+        Controller()
     }
 
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        DispatchQueue.main.async {
-            uiViewController.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+    func updateUIViewController(_ uiViewController: Controller, context: Context) {}
+
+    final class Controller: UIViewController {
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = false
         }
-    }
 
-    static func dismantleUIViewController(_ uiViewController: UIViewController, coordinator: ()) {
-        uiViewController.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        }
     }
 }
 
