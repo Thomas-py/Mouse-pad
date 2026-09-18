@@ -1,0 +1,30 @@
+[project]
+name = "remotepad-server"
+version = "0.1.0"
+description = "Servidor PC de RemotePad: descubrimiento mDNS, control TCP, movimiento UDP e inyección de mouse"
+requires-python = ">=3.11"
+dependencies = [
+    "pynput>=1.7",
+    "zeroconf>=0.132",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+
+[project.scripts]
+remotepad-server = "remotepad_server.main:cli"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["remotepad_server*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

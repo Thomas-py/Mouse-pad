@@ -1,0 +1,23 @@
+# Python (server/)
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.egg-info/
+dist/
+build/
+.remotepad/
+
+# Xcode (ios/)
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.xcuserstate
+.swiftpm/
+
+# Editor / SO
+.DS_Store
+.vscode/
+.idea/
