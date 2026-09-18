@@ -91,6 +91,11 @@ def test_rejects_invalid_json() -> None:
         decode_message("no es json")
 
 
+def test_rejects_invalid_utf8_bytes() -> None:
+    with pytest.raises(ProtocolError):
+        decode_message(b"\xff\xfe\x00\x01 basura binaria")
+
+
 def test_rejects_unknown_type() -> None:
     with pytest.raises(ProtocolError):
         decode_message('{"t":"nope","id":"a1"}')
@@ -197,6 +202,30 @@ def test_decode_rejects_bad_version() -> None:
 def test_decode_rejects_truncated_datagram() -> None:
     with pytest.raises(ProtocolError):
         decode_datagram(b"\x52\x50\x01")
+
+
+def test_decode_rejects_count_zero() -> None:
+    # header válido con count=0 (offset 3) y sin bytes de eventos.
+    header = bytes([0x52, 0x50, 0x01, 0x00]) + b"\x00" * 20
+    with pytest.raises(ProtocolError):
+        decode_datagram(header)
+
+
+def test_decode_rejects_count_over_max() -> None:
+    # count=255 (offset 3), sin proveer 255*6 bytes de eventos: header válido
+    # pero count fuera de rango debe rechazarse ANTES de mirar la longitud.
+    header = bytes([0x52, 0x50, 0x01, 0xFF]) + b"\x00" * 20
+    with pytest.raises(ProtocolError):
+        decode_datagram(header)
+
+
+def test_decode_rejects_oversized_datagram() -> None:
+    token = bytes(range(32))
+    events = [MotionEvent(EventKind.MOVE, 1, 1) for _ in range(32)]  # el máximo válido
+    datagram = encode_datagram(client_id="c", seq=1, token=token, events=events)
+    padded = datagram + b"\x00" * 300  # supera MAX_UDP_DATAGRAM_BYTES (512)
+    with pytest.raises(ProtocolError):
+        decode_datagram(padded)
 
 
 # ---------------------------------------------------------------------------

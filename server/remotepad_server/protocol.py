@@ -165,7 +165,10 @@ def decode_message(raw: bytes | str) -> AnyMessage:
         raw = raw.encode("utf-8")
     if len(raw) > MAX_TCP_MESSAGE_BYTES:
         raise ProtocolError("internal", "mensaje excede MAX_TCP_MESSAGE_BYTES")
-    text = raw.decode("utf-8").rstrip("\n")
+    try:
+        text = raw.decode("utf-8").rstrip("\n")
+    except UnicodeDecodeError as exc:
+        raise ProtocolError("internal", f"bytes no son UTF-8 válido: {exc}") from exc
     try:
         data = json.loads(text)
     except json.JSONDecodeError as exc:
@@ -265,12 +268,16 @@ class MotionDatagram:
 def decode_datagram(data: bytes) -> MotionDatagram:
     if len(data) < _HEADER_STRUCT.size:
         raise ProtocolError("internal", "datagrama más corto que el header")
+    if len(data) > MAX_UDP_DATAGRAM_BYTES:
+        raise ProtocolError("internal", "datagrama excede MAX_UDP_DATAGRAM_BYTES")
 
     magic, version, count, seq, ch, sig = _HEADER_STRUCT.unpack_from(data, 0)
     if magic != MOTION_MAGIC:
         raise ProtocolError("internal", "magic inválido")
     if version != MOTION_VERSION:
         raise ProtocolError("bad_version", f"versión de motion no soportada: {version}")
+    if not 1 <= count <= MAX_EVENTS_PER_DATAGRAM:
+        raise ProtocolError("internal", f"count fuera de rango (1-{MAX_EVENTS_PER_DATAGRAM}): {count}")
 
     events_bytes = data[_HEADER_STRUCT.size :]
     if len(events_bytes) != count * _EVENT_STRUCT.size:
