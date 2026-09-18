@@ -73,6 +73,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-09 Canal UDP de movimiento (servidor)
 - **Alcance**: F‑23. `motion_server.py` con verificación de firma, anti‑replay, y llamada al inyector.
 - **Hecho cuando**: tests cubren paquete válido → `move` llamado; firma mala → descartado; `seq` repetido → descartado; wrap de `seq`; un script de prueba `scripts/send_motion.py` mueve el mouse real desde la misma PC.
+- **Estado**: hecho. 15 tests nuevos, incluido uno end-to-end con socket UDP real (loopback). La inversión de scroll por `natural_scroll` queda para S-13 a propósito (no es scope de esta story). El script manual no se corrió (requiere una sesión de control_server activa de verdad).
 
 ### S-10 PadView y movimiento (iOS)
 - **Alcance**: F‑04, F‑10. `PadView` con `touchesBegan/Moved/Ended`, `MotionFilter` (sensibilidad fija 1.5 por ahora, acumulación sub‑pixel), `MotionChannel` UDP agrupando a 120 Hz.
