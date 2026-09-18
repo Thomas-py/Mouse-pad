@@ -24,12 +24,17 @@ targets:
     deploymentTarget: "16.0"
     sources:
       - path: RemotePad/App
+      - path: RemotePad/Discovery
     info:
       path: Generated/Info.plist
       properties:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # F-01 / S-06: permiso de Red Local, obligatorio en iOS 14+ para mDNS/UDP local.
+        NSLocalNetworkUsageDescription: "RemotePad necesita acceder a la red local para encontrar la PC y controlarla como trackpad."
+        NSBonjourServices:
+          - _remotepad._tcp
     settings:
       base:
         PRODUCT_NAME: RemotePad

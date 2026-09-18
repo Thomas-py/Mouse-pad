@@ -4,7 +4,7 @@ import SwiftUI
 struct RemotePadApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HostListView()
         }
     }
 }
