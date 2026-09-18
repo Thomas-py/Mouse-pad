@@ -32,8 +32,16 @@ Usar un mouse obliga a tener el brazo levantado sobre el escritorio. El objetivo
 | Servidor PC | Python 3.11+ con `pynput` (inyección), `zeroconf` (mDNS), `asyncio` (sockets) | `pynput` es multiplataforma y estable; las libs Node de inyección (`robotjs`, `nut-js`) tienen builds rotos o licencias pagas |
 | Formato mensajes | JSON en TCP, binario compacto en UDP | Debug fácil donde no importa el tamaño; eficiencia donde sí |
 | Seguridad v1 | PIN en pairing + token compartido firmando cada paquete UDP (HMAC‑SHA256 truncado) | Evitar que otro dispositivo de la red mueva el mouse |
-| Distribución iOS | Xcode + dispositivo propio (cuenta free) o TestFlight | No hay App Store en v1 |
+| Distribución iOS | Build en CI (GitHub Actions, runner `macos-latest`) + instalación con **Sideloadly** desde la netbook Windows | Thomas no tiene Mac. Sin Mac no hay Xcode local posible (no existe SDK de iOS para Windows). Apple ID gratis: el `.ipa` expira a los 7 días y hay que reinstalar; con cuenta de pago (u$s99/año) dura 1 año — decisión de Thomas, no bloqueante para empezar |
 | Distribución PC | Script Python + `pyinstaller` opcional | Mínimo esfuerzo |
+
+## 4bis. Sin Mac — implicancias
+
+- **No hay Xcode local.** Todo build de la app se hace en CI (`macos-latest`). Nadie en este proyecto abre Xcode a mano; los `.swift` se escriben como texto y el CI los compila.
+- **Firma de código**: requiere Apple ID + certificado de desarrollo. Los secretos (Apple ID, contraseña de aplicación, certificado `.p12`, provisioning profile) van como *GitHub Secrets*, nunca en el repo ni en el chat.
+- **Instalación en el iPhone 14**: `.ipa` generado por CI → Sideloadly (Windows, por cable) → confiar en el certificado en Ajustes → General → VPN y gestión de dispositivos.
+- **Iteración más lenta** que con Xcode local: cada cambio de UI pasa por push → CI → descarga de artifact → sideload. Evaluar `xcodebuild -parallelizeTargets` y builds incrementales cuando moleste.
+- El workflow de CI y el detalle de firma se resuelven en una story dedicada antes de necesitar correr algo en el dispositivo real (ver `04-STORIES.md`, story de CI/distribución).
 
 ## 5. Restricciones duras
 

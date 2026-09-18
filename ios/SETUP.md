@@ -1,13 +1,11 @@
-# Crear el proyecto Xcode
+# Compilar e instalar sin Mac
 
-Los archivos Swift de `RemotePad/App/` ya existen, pero el `.xcodeproj` no se generó acá porque este scaffold se hizo sin Xcode disponible (máquina Windows). Para dejarlo compilando en macOS:
+Thomas no tiene Mac — netbook Windows + iPhone 14. No hay forma de correr Xcode localmente (no existe SDK de iOS para Windows).
 
-1. Abrir Xcode → **File → New → Project → iOS → App**.
-2. Nombre: `RemotePad`. Interface: **SwiftUI**. Language: **Swift**. Sin Core Data, sin tests (por ahora).
-3. Target mínimo: **iOS 16.0**.
-4. Guardar el proyecto en `ios/` (va a crear `ios/RemotePad.xcodeproj` y su propio `ios/RemotePad/`).
-5. Borrar el `ContentView.swift` y `RemotePadApp.swift` que genera Xcode por defecto y reemplazarlos por los de `App/` de este repo (o simplemente arrastrar la carpeta `App/` existente al navegador del proyecto, sin copiar, reemplazando los duplicados).
-6. Verificar: **Product → Build** compila sin errores y el simulador muestra el texto "RemotePad".
-7. Confirmar cero dependencias SPM (`Package Dependencies` vacío) — regla dura del proyecto.
+El plan es **story S-05** (`docs/04-STORIES.md`): CI en GitHub Actions (`macos-latest`) compila y firma el `.ipa`, y se instala en el iPhone con **Sideloadly** desde Windows por cable. Ver `docs/00-CONTEXTO.md §4bis` para el detalle de la decisión.
 
-A partir de acá, cada story agrega sus propios grupos/carpetas (`Discovery/`, `Transport/`, `Pairing/`, `Pad/`, `Settings/`) dentro de `RemotePad/`, según `01-ARQUITECTURA.md`.
+No se implementa acá todavía porque requiere, de parte de Thomas:
+- El repo empujado a GitHub (remoto).
+- Un Apple ID (alcanza el gratuito para empezar; expira el sideload cada 7 días).
+
+Hasta que se resuelva S-05, los archivos de `RemotePad/App/` quedan como código fuente sin compilar verificado.
