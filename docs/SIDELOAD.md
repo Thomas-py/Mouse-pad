@@ -2,6 +2,14 @@
 
 Guía para Thomas. Sin Mac, la única forma de tener la app en el iPhone 14 es: CI compila y firma el `.ipa`, vos lo instalás con Sideloadly desde la netbook Windows. Ver la decisión completa en `00-CONTEXTO.md §4bis`.
 
+## ⚠️ GitHub Actions bloqueado por billing
+
+La cuenta de GitHub (`Thomas-py`) tiene el billing bloqueado ("account is locked due to a billing issue") — la tarjeta cargada fue rechazada por el banco. Esto bloquea Actions en **todos** los repos de la cuenta, públicos o privados; hacer el repo público no lo esquiva (ya se probó).
+
+Dos caminos, elegí uno:
+- **Arreglar el billing de GitHub**: entrar a `github.com/settings/billing`, probar con otra tarjeta o llamar al banco (muchas veces el rechazo es por bloqueo de cargos recurrentes/internacionales). Con eso vuelve a andar `.github/workflows/ios-build.yml` tal cual está.
+- **Usar Codemagic en su lugar (gratis, sin tarjeta)**: ya está listo `codemagic.yaml` en la raíz del repo — solo hace falta entrar a [codemagic.io](https://codemagic.io), conectarte con tu cuenta de GitHub (OAuth, no crea contraseña nueva) y agregar la app `Thomas-py/Mouse-pad`. Codemagic detecta el `codemagic.yaml` solo y corre el workflow `ios-unsigned-build` (compila para simulador + corre los tests) en cada push a `main`. 500 minutos gratis por mes en el plan free. Por ahora solo cubre el build sin firmar (para confirmar que compila); el build firmado + `.ipa` para Sideloadly sigue armado para GitHub Actions más abajo en esta guía — se puede portar a Codemagic más adelante si el billing de GitHub no se resuelve.
+
 ## 0. Lo que esto NO resuelve solo
 
 Nadie más que vos puede hacer estos pasos — necesitan tu cuenta de Apple y tu GitHub:

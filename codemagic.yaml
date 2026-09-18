@@ -1,0 +1,40 @@
+workflows:
+  ios-unsigned-build:
+    name: RemotePad — build sin firmar + tests
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      xcode: latest
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Instalar XcodeGen
+        script: brew install xcodegen
+
+      - name: Generar RemotePad.xcodeproj
+        script: |
+          cd ios
+          xcodegen generate --spec project.yml
+
+      - name: Build para simulador (sin firmar)
+        script: |
+          cd ios
+          xcodebuild build \
+            -project RemotePad.xcodeproj \
+            -scheme RemotePad \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Tests unitarios (GestureEngine, etc.)
+        script: |
+          cd ios
+          xcodebuild test \
+            -project RemotePad.xcodeproj \
+            -scheme RemotePad \
+            -destination "platform=iOS Simulator,name=iPhone 15" \
+            CODE_SIGNING_ALLOWED=NO
