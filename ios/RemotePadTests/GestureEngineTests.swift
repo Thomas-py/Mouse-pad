@@ -11,7 +11,7 @@ final class GestureEngineTests: XCTestCase {
     private final class TouchToken {}
 
     private func makeTouchID() -> GestureTouchID {
-        GestureTouchID(ObjectIdentifier(TouchToken()))
+        GestureTouchID(TouchToken())
     }
 
     private func makeEngine() -> (GestureEngine, RecordingSink) {

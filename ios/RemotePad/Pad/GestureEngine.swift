@@ -27,9 +27,23 @@ enum GestureIntent: Equatable {
 /// Identificador liviano de touch — desacopla el motor de UIKit para poder
 /// testearlo con secuencias sintéticas (docs/04-STORIES.md S-11: "tests
 /// unitarios... con secuencias de touches simuladas").
+///
+/// Retiene el objeto (no solo su `ObjectIdentifier`) a propósito: un
+/// `ObjectIdentifier` tomado de un objeto que nadie más retiene puede
+/// quedar libre y ser reasignado por el allocator a otro objeto creado
+/// después, haciendo que dos touches distintos comparen como el mismo
+/// ID (pasó con los `TouchToken()` de los tests, ver GestureEngineTests).
 struct GestureTouchID: Hashable {
-    private let raw: ObjectIdentifier
-    init(_ raw: ObjectIdentifier) { self.raw = raw }
+    private let token: AnyObject
+    init(_ token: AnyObject) { self.token = token }
+
+    static func == (lhs: GestureTouchID, rhs: GestureTouchID) -> Bool {
+        lhs.token === rhs.token
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ObjectIdentifier(token))
+    }
 }
 
 private enum EngineState {

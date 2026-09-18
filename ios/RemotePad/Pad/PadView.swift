@@ -72,7 +72,7 @@ final class PadUIView: UIView {
                 exitStartLocation = location
                 continue
             }
-            engineTouches.append((GestureTouchID(ObjectIdentifier(touch)), location))
+            engineTouches.append((GestureTouchID(touch), location))
         }
         if !engineTouches.isEmpty {
             gestureEngine.touchesBegan(engineTouches, now: now)
@@ -93,7 +93,7 @@ final class PadUIView: UIView {
 
         let engineTouches: [(id: GestureTouchID, location: CGPoint)] = touches
             .filter { $0 != exitTouch }
-            .map { (GestureTouchID(ObjectIdentifier($0)), $0.location(in: self)) }
+            .map { (GestureTouchID($0), $0.location(in: self)) }
         if !engineTouches.isEmpty {
             gestureEngine.touchesMoved(engineTouches, now: now)
         }
@@ -115,7 +115,7 @@ final class PadUIView: UIView {
             exitStartLocation = nil
         }
 
-        let ids = touches.filter { $0 != exitTouch }.map { GestureTouchID(ObjectIdentifier($0)) }
+        let ids = touches.filter { $0 != exitTouch }.map { GestureTouchID($0) }
         guard !ids.isEmpty else { return }
         if cancelled {
             gestureEngine.touchesCancelled(ids, now: now)
