@@ -46,3 +46,25 @@ targets:
         # iphonesimulator sin firmar. El build firmado para iphoneos necesita
         # DEVELOPMENT_TEAM + provisioning profile via secrets — ver docs/SIDELOAD.md.
         CODE_SIGN_STYLE: Automatic
+
+  RemotePadTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: RemotePadTests
+    dependencies:
+      - target: RemotePad
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+
+schemes:
+  RemotePad:
+    build:
+      targets:
+        RemotePad: all
+        RemotePadTests: [test]
+    test:
+      targets:
+        - RemotePadTests

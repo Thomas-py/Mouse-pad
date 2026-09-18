@@ -34,6 +34,15 @@ jobs:
             -destination "generic/platform=iOS Simulator" \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: Tests unitarios (GestureEngine, etc.)
+        working-directory: ios
+        run: |
+          xcodebuild test \
+            -project RemotePad.xcodeproj \
+            -scheme RemotePad \
+            -destination "platform=iOS Simulator,name=iPhone 15" \
+            CODE_SIGNING_ALLOWED=NO
+
   # Build firmado + .ipa instalable en el iPhone real. Requiere que Thomas
   # haya cargado los GitHub Secrets descritos en docs/SIDELOAD.md:
   #   APPLE_TEAM_ID, APPLE_CERTIFICATE_P12 (base64), APPLE_CERTIFICATE_PASSWORD,

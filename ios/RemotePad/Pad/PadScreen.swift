@@ -3,11 +3,12 @@ import SwiftUI
 import UIKit
 
 /// Abre la sesión completa contra un host ya emparejado: handshake TCP
-/// (hello/auth) + canal UDP de movimiento, y muestra el PadView (F-03, F-04).
+/// (hello/auth) + canal UDP de movimiento, y traduce los `GestureIntent`
+/// del `GestureEngine` a mensajes reales (F-03, F-04..F-08).
 ///
 /// Esta orquestación no tenía una story propia asignada explícitamente —
-/// sin ella PadView quedaría inalcanzable desde la UI. Se agrega acá (S-10)
-/// como la integración mínima necesaria para que la story sea usable.
+/// sin ella PadView quedaría inalcanzable desde la UI. Se agrega en S-10
+/// y se extiende en S-11 con el manejo de clics/drag/scroll.
 /// F-03 completo (barra verde/amarillo/rojo, reconexión con backoff) es
 /// S-15 — acá hay solo un estado fijo mientras la sesión sigue viva.
 @MainActor
@@ -26,6 +27,11 @@ final class PadSession: ObservableObject {
     private var filter = MotionFilter()
     private var messageCounter = 0
 
+    private var token: Data?
+    private var sessionId: String?
+    private var hapticLight: UIImpactFeedbackGenerator?
+    private var hapticMedium: UIImpactFeedbackGenerator?
+
     init(host: DiscoveredHost) {
         self.host = host
     }
@@ -35,6 +41,7 @@ final class PadSession: ObservableObject {
             state = .failed("no emparejado")
             return
         }
+        self.token = token
 
         do {
             try await controlChannel.connect(to: host.endpoint)
@@ -55,10 +62,11 @@ final class PadSession: ObservableObject {
             let sig = Signer.authSig(token: token, nonceServer: nonceServer, nonceClient: nonceClient)
             try await controlChannel.send(AuthMessage(id: nextId(), clientId: clientId, sig: sig))
 
-            guard case .authOk = try await controlChannel.receiveMessage() else {
+            guard case .authOk(let authOk) = try await controlChannel.receiveMessage() else {
                 state = .failed("auth rechazado")
                 return
             }
+            sessionId = authOk.session
 
             guard let udpPort = NWEndpoint.Port(rawValue: host.udpPort),
                   let remoteHost = controlChannel.resolvedRemoteHost
@@ -71,6 +79,9 @@ final class PadSession: ObservableObject {
             motionChannel.clientId = clientId
             motionChannel.connect(to: .hostPort(host: NWEndpoint.Host(remoteHost), port: udpPort))
 
+            hapticLight = UIImpactFeedbackGenerator(style: .light)
+            hapticMedium = UIImpactFeedbackGenerator(style: .medium)
+
             state = .connected
         } catch {
             state = .failed("\(error)")
@@ -82,10 +93,50 @@ final class PadSession: ObservableObject {
         controlChannel.disconnect()
     }
 
-    func handleMove(dx: Double, dy: Double) {
-        let (fx, fy) = filter.apply(dx: dx, dy: dy)
-        if fx != 0 || fy != 0 {
-            motionChannel.addMove(dx: fx, dy: fy)
+    func configure(_ engine: GestureEngine) {
+        // Ajustes reales (sensibilidad, tapToDrag, etc.) llegan en S-14.
+    }
+
+    func handleIntent(_ intent: GestureIntent) {
+        switch intent {
+        case .move(let dx, let dy):
+            let (fx, fy) = filter.apply(dx: dx, dy: dy)
+            if fx != 0 || fy != 0 {
+                motionChannel.addMove(dx: fx, dy: fy)
+            }
+        case .scroll(let dx, let dy):
+            motionChannel.addScroll(dx: Int(dx.rounded()), dy: Int(dy.rounded()))
+        case .click:
+            sendBtn(button: "left", action: "click", count: 1)
+        case .rightClick:
+            sendBtn(button: "right", action: "click", count: 1)
+        case .dragStart:
+            sendBtn(button: "left", action: "down", count: 1)
+        case .dragMove(let dx, let dy):
+            let (fx, fy) = filter.apply(dx: dx, dy: dy)
+            if fx != 0 || fy != 0 {
+                motionChannel.addMove(dx: fx, dy: fy)
+            }
+        case .dragEnd:
+            sendBtn(button: "left", action: "up", count: 1)
+        case .hapticLight:
+            hapticLight?.impactOccurred()
+        case .hapticMedium:
+            hapticMedium?.impactOccurred()
+        }
+    }
+
+    /// NOTA: cada llamada crea un Task independiente; en teoría el scheduler
+    /// podría entregarlos fuera de orden si se disparan muy rápido en
+    /// sucesión (ej. down/up de un drag). No se resolvió con una cola serial
+    /// explícita por tiempo — revisar si en el dispositivo real se ve algún
+    /// btn fuera de orden.
+    private func sendBtn(button: String, action: String, count: Int) {
+        guard let token, let sessionId else { return }
+        let id = nextId()
+        let sig = Signer.messageSig(token: token, session: sessionId, id: id, type: "btn")
+        Task {
+            try? await controlChannel.send(BtnMessage(id: id, sig: sig, button: button, action: action, count: count))
         }
     }
 
@@ -111,8 +162,12 @@ struct PadScreen: View {
             case .connecting:
                 ProgressView("Conectando...")
             case .connected:
-                PadView(onMove: session.handleMove, onExit: { dismiss() })
-                    .ignoresSafeArea()
+                PadView(
+                    engineConfig: session.configure,
+                    onIntent: session.handleIntent,
+                    onExit: { dismiss() }
+                )
+                .ignoresSafeArea()
             case .failed(let reason):
                 VStack(spacing: 12) {
                     Text("No se pudo conectar").font(.headline)

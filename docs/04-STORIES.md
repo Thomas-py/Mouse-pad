@@ -84,6 +84,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-11 GestureEngine — clic, doble clic, clic derecho
 - **Alcance**: F‑05, F‑06. Máquina de estados de `01-ARQUITECTURA.md §2`, envío de `btn` por TCP, háptico.
 - **Hecho cuando**: tests unitarios del `GestureEngine` con secuencias de touches simuladas (tap, doble tap, tap‑con‑movimiento = no tap, dos dedos) producen exactamente los eventos esperados; en el dispositivo real el clic simple se siente sin retraso y el doble clic abre carpetas.
+- **Estado**: escrito, sin verificar (requiere build en CI, ver S-05) — pero con más cuidado que el resto del código iOS: `RemotePadTests/GestureEngineTests.swift` tiene 12 tests que razoné a mano contra la máquina de estados, y en el proceso encontré y corregí dos bugs reales por revisión propia (la transición a `dragging` y a `scrolling` perdían el primer delta que cruzaba el umbral; y `touchesBegan` no combinaba el touch ya trackeado con el nuevo cuando bajaba un segundo dedo — UIKit solo entrega el touch nuevo, no todos los activos). Se agregó el target `RemotePadTests` a `project.yml` y un paso `xcodebuild test` al CI. Todo esto sigue sin correr de verdad ni una vez.
 
 ### S-12 GestureEngine — drag
 - **Alcance**: F‑07 (tap‑y‑arrastrar y mantener‑presionado). `release_all` del servidor al perder sesión (ya existe en S‑07, verificar).
