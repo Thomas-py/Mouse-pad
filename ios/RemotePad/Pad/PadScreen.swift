@@ -368,6 +368,28 @@ final class PadSession: ObservableObject {
     }
 }
 
+/// Desactiva el "swipe desde el borde izquierdo para volver" de iOS
+/// (`interactivePopGestureRecognizer`) mientras el pad está en pantalla:
+/// compite con el gesto de mover el cursor y el usuario termina saliendo
+/// del pad sin querer al arrastrar hacia la izquierda. SwiftUI no expone
+/// el `UINavigationController` directo, así que se agarra vía un
+/// `UIViewControllerRepresentable` invisible.
+private struct SwipeBackDisabler: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        UIViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        DispatchQueue.main.async {
+            uiViewController.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+        }
+    }
+
+    static func dismantleUIViewController(_ uiViewController: UIViewController, coordinator: ()) {
+        uiViewController.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    }
+}
+
 struct PadScreen: View {
     let host: DiscoveredHost
     @StateObject private var session: PadSession
@@ -407,6 +429,7 @@ struct PadScreen: View {
                 debugOverlay
             }
         }
+        .background(SwipeBackDisabler())
         .statusBarHidden(session.state == .connected)
         .task {
             UIApplication.shared.isIdleTimerDisabled = true
