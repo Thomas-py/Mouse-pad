@@ -16,6 +16,19 @@ final class ControlChannel {
     private var buffer = Data()
     private var pendingLine: CheckedContinuation<Data, Error>?
 
+    /// IP (o nombre) del extremo remoto ya resuelto por esta conexión TCP —
+    /// se usa para abrir el canal UDP de movimiento al mismo host (S-10),
+    /// sin tener que resolver el servicio Bonjour una segunda vez.
+    var resolvedRemoteHost: String? {
+        guard case .hostPort(let host, _) = connection?.currentPath?.remoteEndpoint else { return nil }
+        switch host {
+        case .ipv4(let address): return "\(address)"
+        case .ipv6(let address): return "\(address)"
+        case .name(let name, _): return name
+        @unknown default: return nil
+        }
+    }
+
     func connect(to endpoint: NWEndpoint) async throws {
         let connection = NWConnection(to: endpoint, using: .tcp)
         self.connection = connection

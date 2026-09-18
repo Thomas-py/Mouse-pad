@@ -58,11 +58,7 @@ struct HostListView: View {
     @ViewBuilder
     private func destination(for host: DiscoveredHost) -> some View {
         if isPaired(host) {
-            // F-03 (conectar y abrir el Pad) llega con S-09+; por ahora,
-            // placeholder para no bloquear la navegación de S-06/S-08.
-            Text("Ya emparejado. Abrir el Pad todavía no está implementado.")
-                .foregroundStyle(.secondary)
-                .padding()
+            PadScreen(host: host)
         } else {
             PairingScreen(host: host)
         }

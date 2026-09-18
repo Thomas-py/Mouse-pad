@@ -27,6 +27,7 @@ targets:
       - path: RemotePad/Discovery
       - path: RemotePad/Transport
       - path: RemotePad/Pairing
+      - path: RemotePad/Pad
     info:
       path: Generated/Info.plist
       properties:

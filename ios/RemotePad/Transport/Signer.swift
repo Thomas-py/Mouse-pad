@@ -43,4 +43,9 @@ enum Signer {
         let full = hmacSHA256(key: token, message: payload).hexEncoded
         return String(full.prefix(16))
     }
+
+    /// sig del datagrama UDP = primeros 8 bytes de HMAC-SHA256(token, header_sin_sig + eventos).
+    static func udpSig(token: Data, headerPrefix: Data, eventsData: Data) -> Data {
+        hmacSHA256(key: token, message: headerPrefix + eventsData).prefix(8)
+    }
 }

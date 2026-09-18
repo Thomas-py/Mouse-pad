@@ -79,6 +79,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 - **Alcance**: F‑04, F‑10. `PadView` con `touchesBegan/Moved/Ended`, `MotionFilter` (sensibilidad fija 1.5 por ahora, acumulación sub‑pixel), `MotionChannel` UDP agrupando a 120 Hz.
 - **Fuera**: taps, scroll, ajustes.
 - **Hecho cuando**: el cursor de la PC sigue el dedo con fluidez perceptible como "inmediata"; movimientos lentos mueven el cursor 1 px; levantar y reapoyar no salta.
+- **Estado**: escrito, sin verificar (requiere build en CI, ver S-05). Se agregó `Pad/PadScreen.swift` (handshake completo + apertura del canal UDP) porque ninguna story tenía asignada esa integración y sin ella `PadView` quedaba inalcanzable desde la UI — HostListView ahora navega ahí para hosts ya emparejados. `ControlChannel.resolvedRemoteHost` (extraer la IP resuelta de `NWConnection.currentPath`) es la pieza más especulativa: no se pudo confirmar la forma exacta de `NWEndpoint.Host` contra documentación real de Apple.
 
 ### S-11 GestureEngine — clic, doble clic, clic derecho
 - **Alcance**: F‑05, F‑06. Máquina de estados de `01-ARQUITECTURA.md §2`, envío de `btn` por TCP, háptico.
