@@ -118,6 +118,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-17 Documentación de uso y checklist de release
 - **Alcance**: README final (instalar servidor por SO, permisos, cómo instalar la app en el iPhone vía CI + Sideloadly), sección de troubleshooting (permiso Red local, firewall de Windows en puertos 52100/52101, Wayland, expiración del `.ipa` a los 7 días con Apple ID gratis).
 - **Hecho cuando**: una persona que no participó del proyecto lo instala siguiendo sólo el README.
+- **Estado**: hecho. README raíz reescrito: instalación del server por SO (con la tabla de flags de la CLI real), instalación iOS resumida con link a `docs/SIDELOAD.md` para el detalle paso a paso, y troubleshooting con los 5 problemas más probables (host no aparece, permiso Red Local, firewall Windows con comando `New-NetFirewallRule` y equivalente `netsh`, Wayland, expiración de 7 días, fallo de firma en CI). No verificable "instalándolo de cero" en esta sesión (no hay una segunda persona ni Mac/iPhone a mano); la mitad del checklist real de release (S-05 completo: repo en GitHub, secrets de Apple, primer sideload) sigue pendiente de Thomas — ver el mensaje de cierre en el historial de commits.
 
 ---
 
