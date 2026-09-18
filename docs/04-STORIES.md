@@ -49,6 +49,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 - **Fuera**: cualquier lógica de la app más allá del scaffold de S-01.
 - **Hecho cuando**: push a `master` dispara el workflow, termina en verde, y el `.ipa` descargado se instala en el iPhone 14 de Thomas con Sideloadly mostrando la pantalla "RemotePad" de S-01.
 - **Nota**: con Apple ID gratis el `.ipa` expira a los 7 días (hay que repetir el sideload); es aceptable para desarrollo. Evaluar cuenta paga si molesta.
+- **Estado**: pipeline escrito (`ios/project.yml`, `.github/workflows/ios-build.yml` con job sin firmar + job firmado condicionado a secrets, `.github/workflows/server-tests.yml`, `docs/SIDELOAD.md`), pero **nunca ejecutado** — no hay `gh`/Swift acá para probarlo, y requiere repo en GitHub + secrets de Apple que solo Thomas puede cargar. Es la parte de todo este trabajo con más chance de necesitar un ajuste al primer intento real.
 
 ### S-06 Descubrimiento de hosts (iOS)
 - **Alcance**: F‑01. `HostBrowser` con `NWBrowser`, pantalla `HostListView`. `Info.plist` con `NSLocalNetworkUsageDescription` y `NSBonjourServices = ["_remotepad._tcp"]`.

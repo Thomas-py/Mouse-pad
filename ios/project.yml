@@ -1,0 +1,40 @@
+# Spec de XcodeGen — genera RemotePad.xcodeproj en CI (macos-latest).
+# No requiere Xcode local: `xcodegen generate` corre en el runner.
+# Editar este archivo a mano cuando se agreguen carpetas nuevas (Discovery/,
+# Transport/, Pairing/, Pad/, Settings/) — no se generan solas.
+name: RemotePad
+
+options:
+  bundleIdPrefix: com.thomaslescano
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: "1" # solo iPhone, no iPad (fuera de alcance v1)
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  RemotePad:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: RemotePad/App
+    info:
+      path: Generated/Info.plist
+      properties:
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_NAME: RemotePad
+        PRODUCT_BUNDLE_IDENTIFIER: com.thomaslescano.remotepad
+        # Sin equipo de firma configurado: el build de CI (S-05) compila para
+        # iphonesimulator sin firmar. El build firmado para iphoneos necesita
+        # DEVELOPMENT_TEAM + provisioning profile via secrets — ver docs/SIDELOAD.md.
+        CODE_SIGN_STYLE: Automatic
