@@ -1,82 +1,47 @@
 # Instalar RemotePad en el iPhone sin Mac
 
-Guía para Thomas. Sin Mac, la única forma de tener la app en el iPhone 14 es: CI compila y firma el `.ipa`, vos lo instalás con Sideloadly desde la netbook Windows. Ver la decisión completa en `00-CONTEXTO.md §4bis`.
+Guía para Thomas. Sin Mac, la única forma de tener la app en el iPhone 14 es: CI compila un `.ipa` **sin firmar**, **Sideloadly** lo firma con tu Apple ID gratis e instala, desde la netbook Windows. Ver la decisión completa en `00-CONTEXTO.md §4bis`.
 
-## ⚠️ GitHub Actions bloqueado por billing
+## ⚠️ Dos bloqueos ya encontrados (y resueltos)
 
-La cuenta de GitHub (`Thomas-py`) tiene el billing bloqueado ("account is locked due to a billing issue") — la tarjeta cargada fue rechazada por el banco. Esto bloquea Actions en **todos** los repos de la cuenta, públicos o privados; hacer el repo público no lo esquiva (ya se probó).
-
-Dos caminos, elegí uno:
-- **Arreglar el billing de GitHub**: entrar a `github.com/settings/billing`, probar con otra tarjeta o llamar al banco (muchas veces el rechazo es por bloqueo de cargos recurrentes/internacionales). Con eso vuelve a andar `.github/workflows/ios-build.yml` tal cual está.
-- **Usar Codemagic en su lugar (gratis, sin tarjeta)**: ya está listo `codemagic.yaml` en la raíz del repo — solo hace falta entrar a [codemagic.io](https://codemagic.io), conectarte con tu cuenta de GitHub (OAuth, no crea contraseña nueva) y agregar la app `Thomas-py/Mouse-pad`. Codemagic detecta el `codemagic.yaml` solo y corre el workflow `ios-unsigned-build` (compila para simulador + corre los tests) en cada push a `main`. 500 minutos gratis por mes en el plan free. Por ahora solo cubre el build sin firmar (para confirmar que compila); el build firmado + `.ipa` para Sideloadly sigue armado para GitHub Actions más abajo en esta guía — se puede portar a Codemagic más adelante si el billing de GitHub no se resuelve.
+- **GitHub Actions bloqueado por billing** de la cuenta `Thomas-py` (tarjeta rechazada). Bloquea Actions en todos los repos, público o privado; hacer el repo público no lo esquiva. Mientras no se arregle (`github.com/settings/billing`), usamos **Codemagic** en su lugar (gratis, sin tarjeta, `codemagic.yaml` ya en la raíz del repo) — conectate en [codemagic.io](https://codemagic.io) con tu cuenta de GitHub (OAuth) y agregá la app `Thomas-py/Mouse-pad`.
+- **`developer.apple.com` no muestra "Certificates, Identifiers & Profiles"** con Apple ID gratis — Apple restringió ese panel web a cuentas con Apple Developer Program pago (u$s99/año). Por eso **no generamos certificado a mano**: el `.ipa` sale sin firmar del CI y **Sideloadly lo firma él solo**, usando el mismo mecanismo gratuito que usa Xcode con "Personal Team". No hace falta el portal web de Apple para nada de esto.
 
 ## 0. Lo que esto NO resuelve solo
 
-Nadie más que vos puede hacer estos pasos — necesitan tu cuenta de Apple y tu GitHub:
+Nadie más que vos puede hacer estos pasos:
 
-1. Crear el repositorio en GitHub y pushear este código.
-2. Tener (o crear) un Apple ID, generar el certificado + provisioning profile, y cargarlos como *GitHub Secrets*.
-3. Instalar Sideloadly en la netbook.
-4. Descargar el primer `.ipa` del workflow y sideloadearlo.
+1. Conectar el repo a Codemagic (o arreglar el billing de GitHub) — ya hecho si estás leyendo esto después de la primera vez.
+2. Instalar Sideloadly en la netbook.
+3. Descargar el `.ipa` sin firmar del build y sideloadearlo con tu Apple ID.
+4. Repetir el sideload cada 7 días (Apple ID gratis) o pagar Apple Developer Program (u$s99/año) si eso molesta.
 
-El resto de esta guía es el detalle de cada uno.
+## 1. Generar el .ipa sin firmar
 
-## 1. Push a GitHub
+En **Codemagic** (o en GitHub Actions si el billing ya está resuelto), el workflow ya compila un `.ipa` sin firmar para dispositivo real en cada push a `main`:
 
-```
-gh repo create remotepad --private --source=. --remote=origin
-git push -u origin master
-```
+- Codemagic: pestaña **Builds** de la app `Mouse-pad` → build más reciente en verde → step "Build sin firmar para el iPhone" → artifact `RemotePad-unsigned.ipa`.
+- GitHub Actions (si está desbloqueado): pestaña **Actions** → job `build-unsigned-device-ipa` → artifact `RemotePad-unsigned-ipa`.
 
-(o creá el repo a mano en github.com y agregá el remoto con `git remote add origin <url>`).
+Bajalo a la netbook.
 
-Con eso ya corre `.github/workflows/server-tests.yml` y la mitad "sin firmar" de `ios-build.yml` (compila para simulador, sirve para detectar errores de compilación en cada push, no genera `.ipa` todavía).
-
-## 2. Apple ID y certificado de desarrollo
-
-No hace falta Xcode para esto — todo se hace desde la web de Apple Developer.
-
-1. Entrá a **developer.apple.com** con tu Apple ID (el gratuito alcanza para empezar; **Certificates, IDs & Profiles** requiere haber aceptado el acuerdo de desarrollador, que aparece solo al entrar la primera vez).
-2. **Identifiers** → **+** → App IDs → App → Bundle ID explícito: `com.thomaslescano.remotepad` (tiene que ser exactamente ese, es el que usa `ios/project.yml`). Capabilities: ninguna especial.
-3. **Certificates** → **+** → "Apple Development" → subís un CSR. Generar el CSR sin Mac:
-   ```
-   openssl req -new -newkey rsa:2048 -nodes -keyout ios_key.pem -out ios_csr.csr -subj "/CN=Thomas Lescano/"
-   ```
-   Subís `ios_csr.csr`, descargás el `.cer` que te da Apple.
-4. Convertir el `.cer` + tu clave privada a `.p12` (con OpenSSL, desde Windows):
-   ```
-   openssl x509 -in development.cer -inform DER -out development.pem -outform PEM
-   openssl pkcs12 -export -inkey ios_key.pem -in development.pem -out development.p12 -password pass:UNA_CONTRASEÑA_TUYA
-   ```
-5. **Devices** → **+** → agregá el UDID del iPhone 14. Conseguir el UDID sin Xcode: conectá el iPhone a la netbook, abrí iTunes o el Explorador de Windows, o más fácil, abrí **Sideloadly** (paso 4 de esta guía) y conectá el teléfono — Sideloadly lo muestra. También sirve `ideviceinfo` si tenés `libimobiledevice` instalado.
-6. **Profiles** → **+** → iOS App Development → elegís el App ID `com.thomaslescano.remotepad`, tu certificado, y el dispositivo agregado. Descargás el `.mobileprovision`.
-7. Tu **Team ID** está en developer.apple.com → **Membership** (10 caracteres, ej. `ABCDE12345`).
-
-## 3. Cargar los secrets en GitHub
-
-En el repo → **Settings → Secrets and variables → Actions → New repository secret**:
-
-| Secret | Valor |
-|---|---|
-| `APPLE_TEAM_ID` | tu Team ID, tal cual (ej. `ABCDE12345`) |
-| `APPLE_CERTIFICATE_P12` | el `.p12` del paso 4, en base64: `certutil -encode development.p12 cert_b64.txt` (Windows) y pegás el contenido sin las líneas `-----BEGIN/END-----` — o `openssl base64 -in development.p12 -out cert_b64.txt` y pegás todo el archivo, `base64 --decode` en CI ignora saltos de línea |
-| `APPLE_CERTIFICATE_PASSWORD` | la contraseña que pusiste al exportar el `.p12` |
-| `APPLE_PROVISIONING_PROFILE` | el `.mobileprovision` del paso 6, en base64 (mismo comando) |
-
-Con los 4 cargados, el job `build-signed-device` de `.github/workflows/ios-build.yml` deja de saltearse y en cada push a `master` sube un artifact `RemotePad-ipa`.
-
-## 4. Sideloadly
+## 2. Sideloadly
 
 1. Descargar de **sideloadly.io** (versión Windows), instalar.
-2. Conectar el iPhone 14 por cable, confiar en la PC si lo pide.
-3. Bajar el `.ipa` del artifact del workflow (pestaña **Actions** del repo → el run más reciente en verde → `RemotePad-ipa`).
-4. Abrir Sideloadly, arrastrar el `.ipa`, poner tu Apple ID (pide la contraseña, la usa solo localmente para firmar vía AltServer, no la manda a nada de RemotePad).
-5. Start. Instala la app en el iPhone.
+2. Conectar el iPhone 14 por cable, confiar en la PC si lo pide (tanto en el iPhone como en iTunes/Apple Mobile Device si Windows lo pide para reconocer el dispositivo).
+3. Abrir Sideloadly, arrastrar `RemotePad-unsigned.ipa`.
+4. Poner tu Apple ID y contraseña en Sideloadly (los usa localmente para firmar vía el mismo mecanismo de Xcode "Personal Team" — no pasan por RemotePad ni por este repo).
+5. **Start**. Sideloadly genera el certificado y provisioning profile automáticamente la primera vez, firma el `.ipa` y lo instala.
 6. En el iPhone: **Ajustes → General → VPN y gestión de dispositivos** → tocar tu Apple ID → **Confiar**.
-7. Abrir RemotePad. Con Apple ID gratis, la app deja de abrir a los **7 días** — repetir desde el paso 3 con el `.ipa` más reciente. Con cuenta paga (u$s99/año) dura 1 año.
+7. Abrir RemotePad. Con Apple ID gratis, la app deja de abrir a los **7 días** (límite de Apple, no de Sideloadly) — repetir desde el paso 3 con el `.ipa` más reciente. Con cuenta paga (u$s99/año) dura 1 año y podés firmar hasta 100 dispositivos sin este límite.
+
+## 3. (Opcional, más adelante) Firmar directo en CI
+
+Si en algún momento pagás el Apple Developer Program, se puede volver a un CI que firma y produce el `.ipa` final sin pasar por Sideloadly — el job `build-signed-device` de `.github/workflows/ios-build.yml` ya está armado para eso (queda saltado hasta que cargues los 4 GitHub Secrets que pide: `APPLE_TEAM_ID`, `APPLE_CERTIFICATE_P12`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_PROVISIONING_PROFILE`). No es necesario para el flujo actual.
 
 ## Problemas comunes
 
-- **"Unable to install" en Sideloadly**: el UDID del iPhone no está en el provisioning profile (revisar paso 2.5) o el profile expiró.
-- **CI falla en `build-signed-device` con "No signing certificate found"**: el `.p12` subido no coincide con el certificado del provisioning profile, o la contraseña en `APPLE_CERTIFICATE_PASSWORD` está mal.
-- **La app se cierra sola al abrir**: falta confiar el certificado (paso 4.6).
+- **Sideloadly no encuentra el iPhone**: instalar/reinstalar los drivers de Apple Mobile Device Support (vienen con iTunes de Microsoft Store o el instalador de Apple) y reconectar el cable.
+- **"Unable to install" en Sideloadly**: normalmente se resuelve reintentando — a veces Apple limita cuántos certificados de desarrollo gratis se pueden generar por semana (máximo 2). Si pegó el límite, esperar unos días o revisar los certificados activos en Sideloadly.
+- **La app se cierra sola al abrir**: falta confiar el certificado (paso 2.6).
+- **Después de 7 días la app no abre**: esperado con Apple ID gratis — repetir el sideload.

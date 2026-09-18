@@ -38,3 +38,30 @@ workflows:
             -scheme RemotePad \
             -destination "platform=iOS Simulator,name=iPhone 17" \
             CODE_SIGNING_ALLOWED=NO
+
+      # Sin firmar, para dispositivo real (arm64, no simulador). Thomas no
+      # tiene cuenta paga de Apple Developer (esa es la única forma de generar
+      # certificados desde la web de developer.apple.com) así que la firma la
+      # hace Sideloadly localmente con su Apple ID gratis al momento de
+      # instalar — acá solo generamos el .ipa sin firmar que Sideloadly toma
+      # como entrada. Ver docs/SIDELOAD.md.
+      - name: Build sin firmar para el iPhone (.ipa para Sideloadly)
+        script: |
+          cd ios
+          xcodebuild build \
+            -project RemotePad.xcodeproj \
+            -scheme RemotePad \
+            -sdk iphoneos \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+          cd build/Build/Products/Release-iphoneos
+          mkdir Payload
+          cp -R RemotePad.app Payload/
+          zip -r "$CM_BUILD_DIR/ios/RemotePad-unsigned.ipa" Payload
+
+    artifacts:
+      - ios/RemotePad-unsigned.ipa

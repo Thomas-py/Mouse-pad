@@ -38,8 +38,8 @@ Usar un mouse obliga a tener el brazo levantado sobre el escritorio. El objetivo
 ## 4bis. Sin Mac — implicancias
 
 - **No hay Xcode local.** Todo build de la app se hace en CI (`macos-latest`). Nadie en este proyecto abre Xcode a mano; los `.swift` se escriben como texto y el CI los compila.
-- **Firma de código**: requiere Apple ID + certificado de desarrollo. Los secretos (Apple ID, contraseña de aplicación, certificado `.p12`, provisioning profile) van como *GitHub Secrets*, nunca en el repo ni en el chat.
-- **Instalación en el iPhone 14**: `.ipa` generado por CI → Sideloadly (Windows, por cable) → confiar en el certificado en Ajustes → General → VPN y gestión de dispositivos.
+- **Firma de código**: `developer.apple.com` no da acceso a Certificates/Identifiers/Profiles con Apple ID gratis (requiere Apple Developer Program pago, u$s99/año). Por eso el CI produce un `.ipa` **sin firmar** para dispositivo, y **Sideloadly lo firma él solo** con el Apple ID gratis de Thomas al momento de instalar (mismo mecanismo que Xcode "Personal Team"). No hay certificado ni contraseña de Apple que pasen por este repo ni por GitHub Secrets.
+- **Instalación en el iPhone 14**: `.ipa` sin firmar generado por CI → Sideloadly (Windows, por cable, firma + instala) → confiar en el certificado en Ajustes → General → VPN y gestión de dispositivos. Ver `docs/SIDELOAD.md`.
 - **Iteración más lenta** que con Xcode local: cada cambio de UI pasa por push → CI → descarga de artifact → sideload. Evaluar `xcodebuild -parallelizeTargets` y builds incrementales cuando moleste.
 - El workflow de CI y el detalle de firma se resuelven en una story dedicada antes de necesitar correr algo en el dispositivo real (ver `04-STORIES.md`, story de CI/distribución).
 

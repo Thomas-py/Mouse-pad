@@ -43,11 +43,57 @@ jobs:
             -destination "platform=iOS Simulator,name=iPhone 17" \
             CODE_SIGNING_ALLOWED=NO
 
-  # Build firmado + .ipa instalable en el iPhone real. Requiere que Thomas
-  # haya cargado los GitHub Secrets descritos en docs/SIDELOAD.md:
-  #   APPLE_TEAM_ID, APPLE_CERTIFICATE_P12 (base64), APPLE_CERTIFICATE_PASSWORD,
-  #   APPLE_PROVISIONING_PROFILE (base64)
-  # Sin esos secrets este job se salta solo (no rompe el build del PR).
+  # Sin firmar, para dispositivo real (arm64, no simulador). Este es el
+  # camino gratis: Apple sacó el acceso web a Certificates/Identifiers/
+  # Profiles para Apple ID sin Apple Developer Program pago, así que no hay
+  # forma de generar un certificado propio sin pagar u$s99/año. Sideloadly
+  # firma este .ipa él solo con el Apple ID gratis de Thomas al momento de
+  # instalar — no requiere secrets. Ver docs/SIDELOAD.md.
+  build-unsigned-device-ipa:
+    name: Build sin firmar para el iPhone (.ipa para Sideloadly)
+    needs: build-unsigned
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar XcodeGen
+        run: brew install xcodegen
+
+      - name: Generar RemotePad.xcodeproj
+        working-directory: ios
+        run: xcodegen generate --spec project.yml
+
+      - name: Build sin firmar
+        working-directory: ios
+        run: |
+          xcodebuild build \
+            -project RemotePad.xcodeproj \
+            -scheme RemotePad \
+            -sdk iphoneos \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+          cd build/Build/Products/Release-iphoneos
+          mkdir Payload
+          cp -R RemotePad.app Payload/
+          zip -r "$GITHUB_WORKSPACE/ios/RemotePad-unsigned.ipa" Payload
+
+      - name: Subir .ipa sin firmar como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RemotePad-unsigned-ipa
+          path: ios/RemotePad-unsigned.ipa
+          retention-days: 7
+
+  # OPCIONAL — solo si en algún momento Thomas paga el Apple Developer
+  # Program (u$s99/año). Con eso el CI puede firmar y armar el .ipa directo,
+  # sin pasar por Sideloadly. Requiere cargar los GitHub Secrets descritos en
+  # docs/SIDELOAD.md: APPLE_TEAM_ID, APPLE_CERTIFICATE_P12 (base64),
+  # APPLE_CERTIFICATE_PASSWORD, APPLE_PROVISIONING_PROFILE (base64). Sin esos
+  # secrets este job se salta solo (no rompe el build del PR).
   build-signed-device:
     name: Build firmado (iPhone) + .ipa
     needs: build-unsigned
