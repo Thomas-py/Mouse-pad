@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// Lista de hosts descubiertos por Bonjour (F-01).
-///
-/// El estado "emparejado" vs "nuevo" depende de si hay token guardado en
-/// Keychain para ese host — eso se implementa en S-08 (Pairing). Hasta
-/// entonces todos los hosts se muestran como "nuevo".
+/// Lista de hosts descubiertos por Bonjour (F-01). Tocar un host nuevo abre
+/// el pairing (F-02); tocar uno emparejado todavía no abre el Pad (F-03,
+/// pendiente de S-09+) — placeholder por ahora.
 struct HostListView: View {
     @StateObject private var browser = HostBrowser()
     @State private var showEmptyHint = false
@@ -39,18 +37,39 @@ struct HostListView: View {
 
     private var hostList: some View {
         List(browser.hosts) { host in
-            HStack {
-                Image(systemName: systemImageName(for: host.os))
-                    .foregroundStyle(.secondary)
-                VStack(alignment: .leading) {
-                    Text(host.name)
-                        .font(.body)
-                    Text("nuevo")
-                        .font(.caption)
+            NavigationLink {
+                destination(for: host)
+            } label: {
+                HStack {
+                    Image(systemName: systemImageName(for: host.os))
                         .foregroundStyle(.secondary)
+                    VStack(alignment: .leading) {
+                        Text(host.name)
+                            .font(.body)
+                        Text(isPaired(host) ? "emparejado" : "nuevo")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func destination(for host: DiscoveredHost) -> some View {
+        if isPaired(host) {
+            // F-03 (conectar y abrir el Pad) llega con S-09+; por ahora,
+            // placeholder para no bloquear la navegación de S-06/S-08.
+            Text("Ya emparejado. Abrir el Pad todavía no está implementado.")
+                .foregroundStyle(.secondary)
+                .padding()
+        } else {
+            PairingScreen(host: host)
+        }
+    }
+
+    private func isPaired(_ host: DiscoveredHost) -> Bool {
+        TokenKeychain.load(forHostId: host.id) != nil
     }
 
     private var emptyStateView: some View {

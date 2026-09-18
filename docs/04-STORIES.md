@@ -64,6 +64,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-08 Canal de control TCP + pairing (iOS)
 - **Alcance**: F‑02, F‑03 (sin reconexión aún). `ControlChannel`, `Signer` (CryptoKit HMAC/HKDF), `PairingFlow`, guardado en Keychain, pantalla de PIN.
 - **Hecho cuando**: desde el iPhone se empareja con PIN real, se reinicia la app y conecta sin pedir PIN; la barra de estado se pone verde; los logs del servidor muestran `auth_ok` y pings.
+- **Estado**: escrito, sin verificar (requiere build en CI, ver S-05). `Signer.swift` replica byte a byte la firma/HKDF de `session.py` — no se pudo correr `swift test` en esta sesión para confirmarlo cruzado contra el server real; es lo primero a probar cuando haya build. La barra de estado verde/amarillo/rojo (parte de F-03) queda pendiente de S-15 (reconexión).
 
 ---
 
