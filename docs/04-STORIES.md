@@ -28,6 +28,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 - **Alcance**: F‑23, F‑24. Métodos `move`, `press`, `release`, `click`, `scroll`, `release_all`. Detección de Wayland con error claro.
 - **Fuera**: red.
 - **Hecho cuando**: script manual `server/scripts/demo_injector.py` mueve el mouse en cuadrado y hace un clic; tests con `pynput` mockeado verifican llamadas.
+- **Estado**: hecho (tests). El script manual no se corrió en esta sesión — requiere ejecutarlo a mano en la PC real, moverá el mouse de verdad.
 
 ---
 
