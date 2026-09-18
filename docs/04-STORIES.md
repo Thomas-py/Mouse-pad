@@ -59,6 +59,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-07 Canal de control TCP + pairing (servidor)
 - **Alcance**: F‑21, F‑22 (sesión única, `busy`), handshake `hello/auth`, `ping/pong`, `storage.py`.
 - **Hecho cuando**: tests con cliente asyncio simulado cubren: pairing OK, PIN incorrecto ×5 → `locked`, handshake con token válido, token inválido → `bad_sig`, segundo cliente → `busy`, timeout de ping cierra sesión.
+- **Estado**: hecho. Tests con clientes asyncio reales sobre loopback (no mocks de red) — 30 tests nuevos. Se incluyó también el manejo de `btn`/`cfg` (F-24), que ninguna otra story tenía asignado explícitamente; ver nota al principio de `control_server.py`.
 
 ### S-08 Canal de control TCP + pairing (iOS)
 - **Alcance**: F‑02, F‑03 (sin reconexión aún). `ControlChannel`, `Signer` (CryptoKit HMAC/HKDF), `PairingFlow`, guardado en Keychain, pantalla de PIN.
