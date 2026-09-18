@@ -89,6 +89,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-12 GestureEngine — drag
 - **Alcance**: F‑07 (tap‑y‑arrastrar y mantener‑presionado). `release_all` del servidor al perder sesión (ya existe en S‑07, verificar).
 - **Hecho cuando**: se puede arrastrar un archivo en el escritorio y seleccionar texto; si la app se cierra a mitad de un drag, el botón se suelta en la PC en < 10 s.
+- **Estado**: hecho por adelantado en S-11 — la máquina de estados del `GestureEngine` ya incluye `dragging` completo (tap-y-retap-y-mover con `dragHoldWindow`, y mantener presionado 400ms con `tick()`), no tenía sentido separarlo en otro archivo. `release_all()` en `control_server.py` (S-07) ya suelta el botón al cerrar sesión — verificado por lectura de código (línea 119), no por test end-to-end nuevo.
 
 ### S-13 Scroll con dos dedos
 - **Alcance**: F‑08 (cliente y servidor), mensaje `cfg` con `natural_scroll`.
