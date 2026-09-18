@@ -21,6 +21,10 @@ final class MotionChannel: NSObject {
     var token: Data?
     var clientId: String?
 
+    /// Total de datagramas mandados en esta conexión — S-15 lo muestrea cada
+    /// 1s para el overlay de debug (paquetes/s, F-09).
+    private(set) var sentDatagramCount = 0
+
     func connect(to endpoint: NWEndpoint) {
         disconnect()
         let connection = NWConnection(to: endpoint, using: .udp)
@@ -39,6 +43,7 @@ final class MotionChannel: NSObject {
         pendingScrollDx = 0
         pendingScrollDy = 0
         hasPending = false
+        sentDatagramCount = 0
     }
 
     func addMove(dx: Int, dy: Int) {
@@ -88,6 +93,7 @@ final class MotionChannel: NSObject {
         guard let datagram = MotionDatagramEncoder.encode(clientId: clientId, seq: seq, token: token, events: events) else {
             return
         }
+        sentDatagramCount += 1
         connection.send(content: datagram, completion: .contentProcessed { _ in })
     }
 

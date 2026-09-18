@@ -108,6 +108,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-15 Reconexión y modo debug
 - **Alcance**: F‑03 (backoff, background/foreground), overlay debug con RTT del ping y paquetes/s.
 - **Hecho cuando**: apagar y prender el servidor con el Pad abierto reconecta solo en < 5 s; bloquear y desbloquear el iPhone reconecta; el RTT mostrado en LAN es < 10 ms.
+- **Estado**: escrito, sin verificar (requiere build en CI, ver S-05). Reescribí `PadScreen.swift` a fondo: backoff 0.5/1/2/4s, `scenePhase` para background/foreground, ping cada 2s con hasta 3 perdidos antes de considerar la sesión caída, barra de estado de 4pt (verde/amarillo/rojo), overlay de debug (RTT + pps, gateado por `settings.showDebug`). En el proceso encontré y corregí dos bugs reales de concurrencia por revisión propia: (1) `enterBackground()` cerraba el socket y el loop de escucha lo malinterpretaba como desconexión inesperada, dis-parando una reconexión no deseada — se corrigió chequeando `Task.isCancelled` antes de tratarlo como falla; (2) al reconectar nunca se cerraba la conexión TCP/UDP vieja antes de abrir una nueva (fuga de `NWConnection` + estado colgado) — se separó `cleanupConnections()` de `teardown()` para que todo intento de reconexión limpie primero. Ninguno de los dos se pudo confirmar corriendo código real.
 
 ### S-16 Robustez del servidor
 - **Alcance**: F‑22 completo, F‑25 (log‑level, mensajes de arranque, aviso de Accesibilidad en macOS), manejo de excepciones para que ningún paquete malformado tire el proceso.
