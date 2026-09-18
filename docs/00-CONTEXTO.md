@@ -42,6 +42,7 @@ Usar un mouse obliga a tener el brazo levantado sobre el escritorio. El objetivo
 - **Instalación en el iPhone 14**: `.ipa` sin firmar generado por CI → Sideloadly (Windows, por cable, firma + instala) → confiar en el certificado en Ajustes → General → VPN y gestión de dispositivos. Ver `docs/SIDELOAD.md`.
 - **Iteración más lenta** que con Xcode local: cada cambio de UI pasa por push → CI → descarga de artifact → sideload. Evaluar `xcodebuild -parallelizeTargets` y builds incrementales cuando moleste.
 - El workflow de CI y el detalle de firma se resuelven en una story dedicada antes de necesitar correr algo en el dispositivo real (ver `04-STORIES.md`, story de CI/distribución).
+- **El router de Thomas (Telecentro, gateway Sagemcom) no reenvía el multicast de mDNS entre clientes Wi-Fi**, aunque el resto de la LAN funciona normal (ping directo entre PC e iPhone anda perfecto, misma subred, mismo SSID/banda). El panel de administración que da el ISP no expone ninguna opción de aislamiento/multicast para desactivar — está capado. Por eso F-01 tiene un fallback de conexión manual por IP (ver `03-ESPECIFICACIONES-FUNCIONALES.md` F-01) además del descubrimiento Bonjour normal.
 
 ## 5. Restricciones duras
 

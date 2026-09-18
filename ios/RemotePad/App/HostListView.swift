@@ -6,6 +6,9 @@ import SwiftUI
 struct HostListView: View {
     @StateObject private var browser = HostBrowser()
     @State private var showEmptyHint = false
+    @State private var showManualEntry = false
+    @State private var manualIPText = ""
+    @State private var manualHost: DiscoveredHost?
 
     var body: some View {
         NavigationStack {
@@ -20,6 +23,13 @@ struct HostListView: View {
             }
             .navigationTitle("RemotePad")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showManualEntry = true
+                    } label: {
+                        Image(systemName: "network")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         SettingsView(store: .shared)
@@ -28,6 +38,24 @@ struct HostListView: View {
                     }
                 }
             }
+            // NavigationLink oculto: la navegación programática por
+            // `navigationDestination(item:)` es iOS 17+, y el deployment
+            // target de este proyecto es iOS 16 (00-CONTEXTO.md). Este es el
+            // patrón equivalente compatible con 16.
+            .background(
+                NavigationLink(
+                    isActive: Binding(
+                        get: { manualHost != nil },
+                        set: { active in if !active { manualHost = nil } }
+                    )
+                ) {
+                    if let manualHost { destination(for: manualHost) }
+                } label: { EmptyView() }
+                .hidden()
+            )
+        }
+        .sheet(isPresented: $showManualEntry) {
+            manualEntrySheet
         }
         .onAppear {
             browser.start()
@@ -86,6 +114,39 @@ struct HostListView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
+                Button("Conectar por IP") {
+                    showManualEntry = true
+                }
+                .font(.callout)
+            }
+        }
+    }
+
+    private var manualEntrySheet: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("IP de la PC (ej. 192.168.0.23)", text: $manualIPText)
+                        .keyboardType(.numbersAndPunctuation)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } footer: {
+                    Text("Usá esto si la app no encuentra la PC sola — algunos routers no dejan pasar el descubrimiento automático. Asume los puertos por defecto del servidor (52100/52101).")
+                }
+            }
+            .navigationTitle("Conectar por IP")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { showManualEntry = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Conectar") {
+                        guard let host = DiscoveredHost.manual(ip: manualIPText) else { return }
+                        showManualEntry = false
+                        manualHost = host
+                    }
+                    .disabled(manualIPText.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
             }
         }
     }

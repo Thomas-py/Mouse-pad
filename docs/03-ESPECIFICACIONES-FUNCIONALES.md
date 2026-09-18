@@ -8,7 +8,8 @@ Cada funcionalidad tiene un código `F-xx` que las stories (`04-STORIES.md`) ref
 - Al abrir la app se muestra la lista de hosts encontrados por Bonjour (`_remotepad._tcp`), con nombre, SO (ícono) y estado (`emparejado` / `nuevo`).
 - La lista se actualiza en vivo al aparecer/desaparecer hosts.
 - Si el permiso "Red local" está denegado, mostrar aviso con botón a Ajustes del sistema.
-- Si no hay hosts a los 5 s, mostrar texto: "Asegurate de que el servidor esté corriendo en la misma Wi‑Fi".
+- Si no hay hosts a los 5 s, mostrar texto: "Asegurate de que el servidor esté corriendo en la misma Wi‑Fi" + botón **"Conectar por IP"**.
+- **Fallback manual** (agregado tras probar en un router de ISP que bloquea multicast mDNS aunque el resto de la LAN funcione — ver `00-CONTEXTO.md §4bis`): ícono en la barra superior y botón en el estado vacío abren una pantalla para tipear la IP de la PC directamente, sin pasar por Bonjour. Asume los puertos default del servidor (52100 TCP / 52101 UDP); si el usuario cambió `--port`/`--udp-port`, no alcanza.
 
 ### F-02 Emparejamiento
 - Tocar un host `nuevo` abre pantalla de PIN (6 dígitos, teclado numérico, autofocus).

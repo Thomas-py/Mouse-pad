@@ -54,7 +54,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-06 Descubrimiento de hosts (iOS)
 - **Alcance**: F‑01. `HostBrowser` con `NWBrowser`, pantalla `HostListView`. `Info.plist` con `NSLocalNetworkUsageDescription` y `NSBonjourServices = ["_remotepad._tcp"]`.
 - **Hecho cuando**: con el servidor corriendo, el host aparece en la lista en < 3 s y desaparece al apagarlo; el aviso de permiso denegado se muestra si se rechaza. Verificado en el iPhone real vía el pipeline de S-05.
-- **Estado**: escrito, sin verificar (requiere build en CI, ver S-05). La detección de "permiso denegado" (`HostBrowser.scheduleWaitingCheck`) es una heurística (browser encallado en `.waiting` 3s) porque no se pudo confirmar contra la documentación real de Apple en esta sesión (sin acceso de red confiable) qué error expone `NWBrowser` para ese caso puntual — revisar en dispositivo real.
+- **Estado**: hecho, verificado en iPhone real. La detección de "permiso denegado" (heurística de `.waiting` 3s) no se pudo poner a prueba: el bloqueo real encontrado fue otro — el router de Thomas no reenvía multicast mDNS entre clientes Wi-Fi (ver `00-CONTEXTO.md §4bis`) y su panel de ISP no tiene forma de desactivar eso. Se agregó fallback de conexión manual por IP (`DiscoveredHost.manual(ip:)` + botón en `HostListView`) fuera del alcance original de la story pero dentro de F-01 (ya actualizado en `03-ESPECIFICACIONES-FUNCIONALES.md`).
 
 ### S-07 Canal de control TCP + pairing (servidor)
 - **Alcance**: F‑21, F‑22 (sesión única, `busy`), handshake `hello/auth`, `ping/pong`, `storage.py`.
