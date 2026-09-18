@@ -140,7 +140,12 @@ client_id  = "test-client"
 seq        = 7
 eventos    = [move(dx=3, dy=-2)]
 
-bytes esperados (hex, sin sig):
-52 50 01 01 00 00 00 07 <8 bytes sha256("test-client")[:8]> <8 bytes sig> 01 00 00 03 FF FE
+bytes esperados (hex completo, generado por `server/tests/gen_vectors.py`):
+52 50 01 01 00 00 00 07 D5 FE 82 51 31 96 CA 97 19 70 FC 7A BE 0F 4D 6F 01 00 00 03 FF FE
+
+Desglosado:
+- header sin sig: `52 50 01 01 00 00 00 07 D5 FE 82 51 31 96 CA 97` (magic, version, count, seq, client_hash)
+- sig: `19 70 FC 7A BE 0F 4D 6F`
+- evento move(dx=3, dy=-2): `01 00 00 03 FF FE`
 ```
-El valor exacto de `client_hash` y `sig` se genera con el script `server/tests/gen_vectors.py` en la story S‑05 y se copia a ambos lados.
+`client_hash` = SHA-256("test-client")[:8]. `sig` = HMAC-SHA256(token=bytes(range(32)), header_sin_sig + evento)[:8]. Regenerar con `python -m tests.gen_vectors` desde `server/` si cambia el formato; el resultado debe coincidir byte a byte con lo de arriba (test `test_protocol.py::test_vector_matches_docs`) y con lo que implemente el cliente iOS.
