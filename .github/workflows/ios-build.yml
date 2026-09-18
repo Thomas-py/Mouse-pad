@@ -2,7 +2,7 @@ name: iOS build
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths:
       - "ios/**"
       - ".github/workflows/ios-build.yml"
@@ -51,23 +51,39 @@ jobs:
   build-signed-device:
     name: Build firmado (iPhone) + .ipa
     needs: build-unsigned
-    if: >-
-      github.ref == 'refs/heads/master' &&
-      github.event_name == 'push' &&
-      secrets.APPLE_CERTIFICATE_P12 != '' &&
-      secrets.APPLE_PROVISIONING_PROFILE != ''
+    # "secrets" no es un contexto válido en jobs.<job_id>.if (GitHub Actions lo
+    # rechaza con "Invalid workflow file"). El chequeo de secrets se hace en el
+    # primer step (id: guard) y los demás steps miran su output.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: macos-latest
     steps:
+      - name: Verificar que los secrets de firma estén cargados
+        id: guard
+        run: |
+          if [ -z "$APPLE_CERTIFICATE_P12" ] || [ -z "$APPLE_PROVISIONING_PROFILE" ]; then
+            echo "::notice::Secrets de firma (APPLE_CERTIFICATE_P12 / APPLE_PROVISIONING_PROFILE) no configurados todavía — ver docs/SIDELOAD.md. Este job no hace nada por ahora."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+
       - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip != 'true'
 
       - name: Instalar XcodeGen
+        if: steps.guard.outputs.skip != 'true'
         run: brew install xcodegen
 
       - name: Generar RemotePad.xcodeproj
+        if: steps.guard.outputs.skip != 'true'
         working-directory: ios
         run: xcodegen generate --spec project.yml
 
       - name: Importar certificado y provisioning profile
+        if: steps.guard.outputs.skip != 'true'
         env:
           APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -96,6 +112,7 @@ jobs:
           echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
 
       - name: Build + archive firmado
+        if: steps.guard.outputs.skip != 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         working-directory: ios
@@ -111,6 +128,7 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID"
 
       - name: Exportar .ipa
+        if: steps.guard.outputs.skip != 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         working-directory: ios
@@ -137,6 +155,7 @@ jobs:
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
 
       - name: Subir .ipa como artifact
+        if: steps.guard.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: RemotePad-ipa
