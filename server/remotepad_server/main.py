@@ -142,6 +142,15 @@ async def run_async(
 
 
 def cli(argv: Optional[list[str]] = None) -> None:
+    # Cuando stdout no es una TTY interactiva (background process, logs
+    # redirigidos a archivo) Python bufferea por bloque en vez de por línea:
+    # el banner de arranque y, más grave, el PIN de pairing quedaban
+    # invisibles hasta que el buffer se llenaba o el proceso terminaba.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, ValueError):
+        pass  # stdout no soporta reconfigure (p.ej. capturado por pytest)
+
     args = build_parser().parse_args(argv)
     logging.basicConfig(
         level=getattr(logging, args.log_level.upper(), logging.INFO),

@@ -207,7 +207,10 @@ class ControlServer:
             nonce_client=bytes.fromhex(msg.nonce),
         )
 
-        print(f"\n=== RemotePad: PIN de emparejamiento para {msg.client_name!r}: {pin} ===\n")
+        # flush=True: sin esto, el PIN queda en el buffer de stdout y no se ve
+        # en consola hasta que se llena (o el proceso termina) cuando stdout
+        # no es una TTY interactiva — pasó corriendo el server en background.
+        print(f"\n=== RemotePad: PIN de emparejamiento para {msg.client_name!r}: {pin} ===\n", flush=True)
         logger.info("Pairing iniciado: %s (%s)", msg.client_name, msg.client_id)
 
         await self._send(
