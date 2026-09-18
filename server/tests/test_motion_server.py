@@ -41,8 +41,21 @@ def test_valid_move_packet_calls_injector(injector: MagicMock) -> None:
     assert server.dropped_count == 0
 
 
-def test_valid_scroll_packet_calls_injector(injector: MagicMock) -> None:
-    session = _make_session()
+def test_scroll_with_natural_scroll_on_inverts_dy(injector: MagicMock) -> None:
+    """F-08: 'cruda desde el cliente; el servidor invierte si natural_scroll está activo'."""
+    session = _make_session(natural_scroll=True)
+    server = MotionServer(session_provider=_FakeSessionProvider(session), injector=injector)
+
+    datagram = encode_datagram(
+        client_id=CLIENT_ID, seq=1, token=TOKEN, events=[MotionEvent(EventKind.SCROLL, 0, -5)]
+    )
+    server.datagram_received(datagram, ("127.0.0.1", 12345))
+
+    injector.scroll.assert_called_once_with(0, 5)
+
+
+def test_scroll_with_natural_scroll_off_passes_through_raw(injector: MagicMock) -> None:
+    session = _make_session(natural_scroll=False)
     server = MotionServer(session_provider=_FakeSessionProvider(session), injector=injector)
 
     datagram = encode_datagram(
@@ -53,8 +66,39 @@ def test_valid_scroll_packet_calls_injector(injector: MagicMock) -> None:
     injector.scroll.assert_called_once_with(0, -5)
 
 
+def test_scroll_inversion_only_affects_dy_not_dx(injector: MagicMock) -> None:
+    session = _make_session(natural_scroll=True)
+    server = MotionServer(session_provider=_FakeSessionProvider(session), injector=injector)
+
+    datagram = encode_datagram(
+        client_id=CLIENT_ID, seq=1, token=TOKEN, events=[MotionEvent(EventKind.SCROLL, 7, 3)]
+    )
+    server.datagram_received(datagram, ("127.0.0.1", 12345))
+
+    injector.scroll.assert_called_once_with(7, -3)
+
+
+def test_cfg_change_affects_subsequent_scroll_events(injector: MagicMock) -> None:
+    """El toggle de natural_scroll (mensaje `cfg`, S-07) se lee en vivo por cada paquete."""
+    session = _make_session(natural_scroll=True)
+    server = MotionServer(session_provider=_FakeSessionProvider(session), injector=injector)
+
+    first = encode_datagram(
+        client_id=CLIENT_ID, seq=1, token=TOKEN, events=[MotionEvent(EventKind.SCROLL, 0, -5)]
+    )
+    server.datagram_received(first, ("127.0.0.1", 1))
+    injector.scroll.assert_called_once_with(0, 5)
+
+    session.natural_scroll = False  # como si hubiera llegado un `cfg` por TCP
+    second = encode_datagram(
+        client_id=CLIENT_ID, seq=2, token=TOKEN, events=[MotionEvent(EventKind.SCROLL, 0, -5)]
+    )
+    server.datagram_received(second, ("127.0.0.1", 1))
+    assert injector.scroll.call_args_list == [call(0, 5), call(0, -5)]
+
+
 def test_multiple_events_applied_in_order(injector: MagicMock) -> None:
-    session = _make_session()
+    session = _make_session(natural_scroll=False)  # sin inversión, para no acoplar este test a F-08
     server = MotionServer(session_provider=_FakeSessionProvider(session), injector=injector)
 
     events = [

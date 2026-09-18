@@ -72,16 +72,20 @@ class MotionServer(asyncio.DatagramProtocol):
             return
 
         for event in datagram.events:
-            self._apply_event(event)
+            self._apply_event(event, session)
 
     def error_received(self, exc: Exception) -> None:
         logger.debug("Error de socket UDP: %s", exc)
 
-    def _apply_event(self, event: MotionEvent) -> None:
+    def _apply_event(self, event: MotionEvent, session: session_mod.ActiveSession) -> None:
         if event.kind == EventKind.MOVE:
             self._injector.move(event.dx, event.dy)
         elif event.kind == EventKind.SCROLL:
-            self._injector.scroll(event.dx, event.dy)
+            # F-08: "cruda desde el cliente; el servidor invierte si natural_scroll
+            # está activo". Solo se invierte el eje vertical — el doc no dice nada
+            # sobre invertir dx, y no hay caso de uso claro para scroll horizontal.
+            dy = -event.dy if session.natural_scroll else event.dy
+            self._injector.scroll(event.dx, dy)
 
     def _drop(self, reason: str) -> None:
         self.dropped_count += 1

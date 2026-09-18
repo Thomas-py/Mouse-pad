@@ -94,6 +94,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-13 Scroll con dos dedos
 - **Alcance**: F‑08 (cliente y servidor), mensaje `cfg` con `natural_scroll`.
 - **Hecho cuando**: scroll en un navegador es suave y respeta la dirección configurada; tests del servidor cubren inversión.
+- **Estado**: hecho en el server (4 tests nuevos, 97 en total: inversión on/off, que no toca `dx`, y que un cambio de `natural_scroll` en la sesión afecta paquetes siguientes). El lado cliente (`GestureEngine` emite `.scroll`, `PadScreen` lo manda por `MotionChannel`) ya estaba armado desde S-11, sin cambios acá. Falta la UI para tocar `natural_scroll` en vivo — eso es S-14 (Ajustes). Decisión tomada sin poder verificarla: F-08 dice "el servidor invierte si natural_scroll está activo" — se interpretó como invertir solo `dy`, no `dx` (el doc no menciona scroll horizontal).
 
 ---
 
