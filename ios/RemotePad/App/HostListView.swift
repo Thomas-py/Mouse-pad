@@ -19,6 +19,15 @@ struct HostListView: View {
                 }
             }
             .navigationTitle("RemotePad")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SettingsView(store: .shared)
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
         }
         .onAppear {
             browser.start()

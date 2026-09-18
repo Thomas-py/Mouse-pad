@@ -103,6 +103,7 @@ Formato: **Objetivo · Alcance · Fuera de alcance · Hecho cuando**.
 ### S-14 Ajustes
 - **Alcance**: F‑09 completo. `SettingsStore`, pantalla, aplicación en vivo.
 - **Hecho cuando**: cambiar sensibilidad se nota sin reconectar; los valores persisten tras reiniciar la app.
+- **Estado**: escrito, sin verificar (requiere build en CI, ver S-05). `SettingsStore` persiste los 6 ajustes de F-09 en UserDefaults. Aplicación en vivo: `PadSession` relee sensibilidad/aceleración en cada gesto (sin reconectar), manda `cfg` inicial con `natural_scroll` al conectar y vuelve a mandarlo si el toggle cambia mientras la sesión sigue abierta (vía Combine, `settings.$naturalScroll`), y gatea los hápticos por `hapticsEnabled`. `showDebug` queda solo persistido — el overlay que lo usa es S-15.
 
 ### S-15 Reconexión y modo debug
 - **Alcance**: F‑03 (backoff, background/foreground), overlay debug con RTT del ping y paquetes/s.

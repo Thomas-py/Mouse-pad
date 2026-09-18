@@ -1,3 +1,4 @@
+import Combine
 import Network
 import SwiftUI
 import UIKit
@@ -22,18 +23,21 @@ final class PadSession: ObservableObject {
     @Published private(set) var state: State = .connecting
 
     private let host: DiscoveredHost
+    private let settings: SettingsStore
     private let controlChannel = ControlChannel()
     private let motionChannel = MotionChannel()
     private var filter = MotionFilter()
     private var messageCounter = 0
+    private var cancellables: Set<AnyCancellable> = []
 
     private var token: Data?
     private var sessionId: String?
     private var hapticLight: UIImpactFeedbackGenerator?
     private var hapticMedium: UIImpactFeedbackGenerator?
 
-    init(host: DiscoveredHost) {
+    init(host: DiscoveredHost, settings: SettingsStore = .shared) {
         self.host = host
+        self.settings = settings
     }
 
     func start() async {
@@ -67,6 +71,8 @@ final class PadSession: ObservableObject {
                 return
             }
             sessionId = authOk.session
+            try? await sendInitialCfg()
+            observeNaturalScrollChanges()
 
             guard let udpPort = NWEndpoint.Port(rawValue: host.udpPort),
                   let remoteHost = controlChannel.resolvedRemoteHost
@@ -89,15 +95,19 @@ final class PadSession: ObservableObject {
     }
 
     func stop() {
+        cancellables.removeAll()
         motionChannel.disconnect()
         controlChannel.disconnect()
     }
 
+    /// F-09: tapToDrag se aplica en vivo leyendo `settings` en cada gesto
+    /// (ver `handleIntent`); acá solo se fija el valor inicial del engine.
     func configure(_ engine: GestureEngine) {
-        // Ajustes reales (sensibilidad, tapToDrag, etc.) llegan en S-14.
+        engine.tapToDragEnabled = settings.tapToDrag
     }
 
     func handleIntent(_ intent: GestureIntent) {
+        applyLiveFilterSettings()
         switch intent {
         case .move(let dx, let dy):
             let (fx, fy) = filter.apply(dx: dx, dy: dy)
@@ -120,9 +130,39 @@ final class PadSession: ObservableObject {
         case .dragEnd:
             sendBtn(button: "left", action: "up", count: 1)
         case .hapticLight:
-            hapticLight?.impactOccurred()
+            if settings.hapticsEnabled { hapticLight?.impactOccurred() }
         case .hapticMedium:
-            hapticMedium?.impactOccurred()
+            if settings.hapticsEnabled { hapticMedium?.impactOccurred() }
+        }
+    }
+
+    private func applyLiveFilterSettings() {
+        filter.sensitivity = settings.sensitivity
+        filter.acceleration = settings.acceleration
+    }
+
+    private func sendInitialCfg() async throws {
+        guard let token, let sessionId else { return }
+        let id = nextId()
+        let sig = Signer.messageSig(token: token, session: sessionId, id: id, type: "cfg")
+        try await controlChannel.send(CfgMessage(id: id, sig: sig, naturalScroll: settings.naturalScroll))
+    }
+
+    private func observeNaturalScrollChanges() {
+        settings.$naturalScroll
+            .dropFirst() // el valor inicial ya se mandó en sendInitialCfg()
+            .sink { [weak self] value in
+                self?.sendCfg(naturalScroll: value)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func sendCfg(naturalScroll: Bool) {
+        guard let token, let sessionId else { return }
+        let id = nextId()
+        let sig = Signer.messageSig(token: token, session: sessionId, id: id, type: "cfg")
+        Task {
+            try? await controlChannel.send(CfgMessage(id: id, sig: sig, naturalScroll: naturalScroll))
         }
     }
 
