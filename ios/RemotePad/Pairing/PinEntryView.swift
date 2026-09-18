@@ -19,7 +19,7 @@ struct PinEntryView: View {
                 .multilineTextAlignment(.center)
                 .focused($focused)
                 .disabled(flow.state == .verifying || flow.state == .locked)
-                .onChange(of: pin) { _, newValue in
+                .onChange(of: pin) { newValue in
                     let digitsOnly = String(newValue.filter(\.isNumber).prefix(6))
                     if digitsOnly != newValue { pin = digitsOnly }
                     if digitsOnly.count == 6 {
@@ -31,7 +31,7 @@ struct PinEntryView: View {
         }
         .padding()
         .onAppear { focused = true }
-        .onChange(of: flow.state) { _, newState in
+        .onChange(of: flow.state) { newState in
             if newState == .badPin {
                 pin = ""
                 focused = true

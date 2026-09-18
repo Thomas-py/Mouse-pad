@@ -416,7 +416,7 @@ struct PadScreen: View {
             UIApplication.shared.isIdleTimerDisabled = false
             session.onDisappear()
         }
-        .onChange(of: scenePhase) { _, newPhase in
+        .onChange(of: scenePhase) { newPhase in
             switch newPhase {
             case .active:
                 session.enterForeground()
