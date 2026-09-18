@@ -112,7 +112,12 @@ async def run_async(
     )
 
     announcer = announcer_factory(name=args.name, port=args.port, udp_port=args.udp_port)
-    announcer.start()
+    # DiscoveryAnnouncer.start() usa la API sync de zeroconf, que bloquea
+    # esperando a su propio hilo interno — llamarla directo desde acá (dentro
+    # del loop de asyncio) hace que zeroconf lo detecte y tire EventLoopBlocked
+    # a propósito. asyncio.to_thread la corre fuera del loop, donde ese
+    # bloqueo es inofensivo.
+    await asyncio.to_thread(announcer.start)
 
     _print_startup_banner(name=args.name, port=args.port, udp_port=args.udp_port, host_id=get_or_create_host_id())
     logger.info("RemotePad server corriendo (tcp=%s udp=%s)", args.port, args.udp_port)
@@ -131,7 +136,7 @@ async def run_async(
         await stop_event.wait()
     finally:
         logger.info("Cerrando...")
-        announcer.stop()
+        await asyncio.to_thread(announcer.stop)
         motion_transport.close()
         await control.close()
 
